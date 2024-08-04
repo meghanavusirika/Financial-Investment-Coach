@@ -1,0 +1,53 @@
+import { OpenAI } from "openAI";
+import dotenv from "dotenv";
+import express from "express";
+dotenv.config();
+
+const app = express();
+const port = 8000;
+
+// HI WHOEVER'S LOOKING AT THIS !! THIS IS THE IMPORTANT ONE WOOHOO
+// use the payload {input: whatever ur user's input is}
+// returns {reply: chatbot's response as a string}
+app.post("/talk", (req, res) => {
+  let message = chat(req.body.input);
+  res.send({ reply: message });
+});
+
+// starts server
+app.listen(port, () => {
+  return console.log(`Express is listening at http://localhost:${port}`);
+});
+
+// creates instance of OpenAI
+const client = new OpenAI({ apiKey: process.env.API_KEY });
+
+// stores messaging history between user and assistant
+var messages_history: OpenAI.ChatCompletionMessageParam[];
+messages_history = [
+  {
+    role: "system",
+    content:
+      "You are an expert financial advisor chatbot with extensive knowledge in investment strategies, stock markets, and financial planning. " +
+      "Your goal is to provide users with accurate, practical, and tailored investment advice based on their input. " +
+      "When a user's input is irrelevant to financial investment, gently steer the conversation back on track by providing an example of the type of information you need to give the best advice.",
+  },
+];
+
+// returns openai generated response and adds both user message and response message to messages_history
+async function chat(prompt: string) {
+  messages_history.push({ role: "user", content: prompt });
+  const chatCompletion = await client.chat.completions.create({
+    messages: messages_history,
+    model: "gpt-4o-mini",
+  });
+  let response = chatCompletion.choices[0].message.content;
+  console.log(response);
+  if (typeof response == "string") {
+    messages_history.push({ role: "assistant", content: response });
+  }
+}
+
+// sorry these are my terrible tests dw about it
+//chat("I am a university student looking for low-risk investment options.");
+//console.log("hm");
